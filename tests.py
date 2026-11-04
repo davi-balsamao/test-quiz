@@ -120,3 +120,31 @@ def test_removing_all_choices_leaves_question_empty():
     question.remove_all_choices()
 
     assert question.choices == []
+
+
+@pytest.fixture
+def question_with_choices():
+    question = Question(title='Quais numeros sao pares?', max_selections=2)
+    first = question.add_choice('2')
+    question.add_choice('3')
+    third = question.add_choice('4')
+    question.set_correct_choices([first.id, third.id])
+    return question
+
+
+def test_correction_returns_only_selected_correct_choices(question_with_choices):
+    first, second, third = question_with_choices.choices
+
+    result = question_with_choices.correct_selected_choices([second.id, third.id])
+
+    assert result == [third.id]
+    assert first.is_correct
+    assert not second.is_correct
+    assert third.is_correct
+
+
+def test_correction_rejects_selections_above_limit(question_with_choices):
+    selected_ids = [choice.id for choice in question_with_choices.choices]
+
+    with pytest.raises(Exception, match='^Cannot select more than 2 choices$'):
+        question_with_choices.correct_selected_choices(selected_ids)
